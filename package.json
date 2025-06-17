@@ -3,21 +3,16 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "nodemon index.js"
+    "start": "node ."
   },
   "keywords": [],
   "author": "Otec i Syn",
-  "license": "ISC",
+  "license": "MIT",
   "description": "",
   "dependencies": {
-    "axios": "1.10.0",
     "cheerio": "1.1.0",
-    "dotenv": "^16.5.0",
-    "puppeteer": "^24.10.1"
+    "dotenv": "16.5.0",
+    "puppeteer": "24.10.1"
   },
-  "type": "module",
-  "devDependencies": {
-    "nodemon": "3.1.10"
-  }
+  "type": "module"
 }
