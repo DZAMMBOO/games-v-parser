@@ -12,6 +12,16 @@ dotenv.config();
     .forEach(file => fs.unlinkSync(file));
 }
 
+const isDebug = process.argv.includes('--debug');
+const isLogoutAfterExtract = process.argv.includes('--logout');
+
+const debug = (...args) => isDebug && console.debug(...args);
+const screenshot = async (page, path) => {
+  debug(`Taking screenshot: ${path}`);
+  await page.screenshot({ path, fullPage: true });
+  debug(`Screenshot saved: ${path}`);
+}
+
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 const cookieDomain = '.itch.io';
@@ -23,77 +33,87 @@ const page = await browser.newPage();
 
 const cookiesFile = 'cookies.json';
 if (!fs.existsSync(cookiesFile)) {
+  console.log('No cookies found, logging in...');
+  if (!process.env.ITCHIO_USERNAME || !process.env.ITCHIO_PASSWORD) {
+    console.error('Please set ITCHIO_USERNAME and ITCHIO_PASSWORD environment variables.');
+    process.exit(1);
+  }
+
   await page.goto(indexURL, { waitUntil: 'networkidle2' });
 
-  console.debug('Screenshotting login page...');
-  await page.screenshot({ path: 'login-page.png', fullPage: true });
+  debug('Screenshotting login page...');
+  await screenshot(page, 'login-page.png');
 
   const inputsDiv = '.login_form_widget';
   const usernameInput = `${inputsDiv} input[name="username"]`;
   const passwordInput = `${inputsDiv} input[name="password"]`;
 
-  console.debug('Filling in login form...');
+  debug('Filling in login form...');
   await page.type(usernameInput, process.env.ITCHIO_USERNAME, { delay: 50 });
   await page.type(passwordInput, process.env.ITCHIO_PASSWORD, { delay: 50 });
 
-  console.debug('Screenshotting filled login form...');
-  await page.screenshot({ path: 'filled-login-form.png', fullPage: true });
+  debug('Screenshotting filled login form...');
+  await screenshot(page, 'filled-login-form.png');
 
-  console.debug('Submitting login form...');
+  debug('Submitting login form...');
   await page.click('.buttons .button');
-  console.debug('Waiting for navigation after login...');
+  debug('Waiting for navigation after login...');
 
   await page.waitForNavigation({ waitUntil: 'networkidle2' });
-  console.debug('Navigation after login complete, screenshotting...');
-  await page.screenshot({ path: 'after-login.png', fullPage: true });
-  console.debug('Navigating to game page...');
+  debug('Navigation after login complete, screenshotting...');
+  await screenshot(page, 'after-login.png');
+  debug('Navigating to game page...');
 
   const cookieFilter = cookie => cookie.domain === cookieDomain;
   const cookies = await browser.cookies().then(cookies => cookies.filter(cookieFilter));
-  console.debug('Cookies after login:', cookies);
+  debug('Cookies obtained, saving to cookies.json...');
   fs.writeFileSync('cookies.json', JSON.stringify(cookies, null, 2));
-  console.debug('Cookies saved to cookies.json');
+  debug('Cookies saved to cookies.json');
+  console.log('Login successful!');
 } else {
   const cookies = JSON.parse(fs.readFileSync(cookiesFile));
-  console.debug('Cookies loaded from cookies.json:', cookies);
+  debug('Cookies loaded from cookies.json.');
   await browser.setCookie(...cookies);
 }
 
+console.info('Opening game page...');
 await page.goto(gameURL, { waitUntil: 'networkidle2' });
-console.debug('Game page loaded, waiting for content warning...');
+debug('Game page loaded.');
 
 const moreInfoSelector = '.toggle_info_btn';
 await page.click(moreInfoSelector);
-console.debug('More info button clicked, waiting for content warning...');
+debug('More info button clicked.');
 
-await sleep(2000); // Wait for the content warning to appear
+await sleep(1000);
 
-console.debug('Taking screenshot of game page...');
-await page.screenshot({ path: 'game-page.png', fullPage: true });
-console.debug('Game page screenshot taken, extracting content warning...');
+debug('Taking screenshot of game page...');
+await screenshot(page, 'game-page.png');
+debug('Game page screenshot taken...');
 
 const html = await page.content();
 
-if (false) { // If you want to log out after taking the screenshot
+if (isLogoutAfterExtract) {
   const userMenuBtn = '.drop_menu_wrap';
-  console.debug('Clicking user menu button...');
+  debug('Clicking user menu button...');
   await page.click(userMenuBtn);
-  console.debug('Waiting for user menu to appear...');
+  debug('Waiting for user menu to appear...');
 
   await page.waitForSelector('.drop_menu', { visible: true });
-  console.debug('User menu is visible, taking screenshot...');
+  debug('User menu is visible, taking screenshot...');
 
-  console.debug('Logging out...');
+  debug('Logging out...');
   await page.click('.drop_menu a[data-label="log_out"]');
   await sleep(2000);
   await page.goto(gameURL, { waitUntil: 'networkidle2' });
 
-  console.debug('Game page reloaded after logout, taking final screenshot...');
-  await page.screenshot({ path: 'final-game-page.png', fullPage: true });
-  console.debug('Extracting game information from the page...');
+  debug('Game page reloaded after logout, taking final screenshot...');
+  await screenshot(page, 'final-game-page.png');
+  debug('Final screenshot taken, logging out complete.');
 }
+
 await browser.close();
 
+console.log('Extracting game information from the page...');
 const $ = cheerio.load(html);
 const rows = $('.game_info_panel_widget.base_widget table tr');
 const table = {};
@@ -110,4 +130,5 @@ rows.each((i, el) => {
 });
 
 console.log(table);
+console.log('Game information extracted successfully!');
 process.exit(0);
