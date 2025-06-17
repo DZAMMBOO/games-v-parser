@@ -1,0 +1,23 @@
+{
+  "lastUpdated": "2023-05-25T12:00:00Z",
+  "games": [
+    {
+      "id": "game_123",
+      "title": "Super Game",
+      "url": "https://itch.io/game/123",
+      "version": "1.2",
+      "lastChecked": "2023-05-25T10:00:00Z",
+      "localPath": "C:/Games/SuperGame",
+      "isInstalled": true
+    },
+    {
+      "id": "game_456",
+      "title": "Awesome Adventure",
+      "url": "https://itch.io/game/456",
+      "version": "2.1",
+      "lastChecked": "2023-05-24T15:30:00Z",
+      "localPath": "C:/Games/AwesomeAdventure",
+      "isInstalled": true
+    }
+  ]
+}

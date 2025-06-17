@@ -1,0 +1,13 @@
+{
+  "id": "game_123",
+  "title": "Super Game",
+  "url": "https://itch.io/game/123",      
+  "lastChecked": "2023-05-25T10:00:00Z",
+
+  "itchData": {                           
+    "author": "DevStudio",
+    "language": "English",
+    "publishedDate": "2023-01-10",
+    "version": "1.2"
+  }
+}
