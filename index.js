@@ -12,15 +12,14 @@ dotenv.config();
     .forEach(file => fs.unlinkSync(file));
 }
 
-const isDebug = process.argv.includes('--debug');
-const isLogoutAfterExtract = process.argv.includes('--logout');
+var processArgs = process.argv.slice(2);
+const isAllowScreenshot = processArgs.includes('--screenshots') || process.env.ALLOW_SCREENSHOT === 'true';
+const isDebug = processArgs.includes('--debug') || process.env.DEBUG === 'true';
+const isLogoutAfterExtract = processArgs.includes('--logout');
 
+// Debugging utility
+const screenshot = (page, path) => isAllowScreenshot && page.screenshot({ path, fullPage: true });
 const debug = (...args) => isDebug && console.debug(...args);
-const screenshot = async (page, path) => {
-  debug(`Taking screenshot: ${path}`);
-  await page.screenshot({ path, fullPage: true });
-  debug(`Screenshot saved: ${path}`);
-}
 
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -78,7 +77,7 @@ if (!fs.existsSync(cookiesFile)) {
 
 console.info('Opening game page...');
 await page.goto(gameURL, { waitUntil: 'networkidle2' });
-debug('Game page loaded.');
+console.log('Game page loaded.');
 
 const moreInfoSelector = '.toggle_info_btn';
 await page.click(moreInfoSelector);
@@ -91,7 +90,6 @@ await screenshot(page, 'game-page.png');
 debug('Game page screenshot taken...');
 
 const html = await page.content();
-
 if (isLogoutAfterExtract) {
   const userMenuBtn = '.drop_menu_wrap';
   debug('Clicking user menu button...');
